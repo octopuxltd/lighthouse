@@ -9,7 +9,13 @@ import {
   keyToDirection,
 } from "@/lib/rooms";
 import { art } from "@/lib/art";
-import { initialState, move, type GameState } from "@/lib/engine";
+import {
+  initialState,
+  move,
+  GALLERY_BARRED_MESSAGE,
+  type GameState,
+} from "@/lib/engine";
+import ThumbUnlock from "@/components/ThumbUnlock";
 
 // Matches the .scene opacity transition in globals.css; keep them in step.
 const DISSOLVE_MS = 260;
@@ -34,18 +40,25 @@ const range = (from: number, to: number): number[] =>
   Array.from({ length: to - from + 1 }, (_, i) => from + i);
 
 // One room's contents. Both the outgoing and incoming rooms render as a Scene,
-// stacked in the same grid cell so they can cross-dissolve.
-function Scene({ x, y, style }: Pos & { style: React.CSSProperties }) {
+// stacked in the same grid cell so they can cross-dissolve. When `illustration`
+// is given (the webcam), it takes the place of the room's picture.
+function Scene({
+  x,
+  y,
+  style,
+  illustration,
+}: Pos & { style: React.CSSProperties; illustration?: React.ReactNode }) {
   const key = `${x},${y}`;
   const room = rooms[key];
   const dirs = availableDirections(x, y);
   return (
     <div className="scene" style={style}>
       <h1 className="room-name">{room.name}</h1>
-      <div
-        className="illustration"
-        dangerouslySetInnerHTML={{ __html: art[key] }}
-      />
+      <div className="illustration">
+        {illustration ?? (
+          <div dangerouslySetInnerHTML={{ __html: art[key] }} />
+        )}
+      </div>
       <p className="description">{room.description}</p>
 
       <h2>You can go</h2>
@@ -64,6 +77,7 @@ export default function LighthouseGame() {
   const [game, setGame] = useState<GameState>(initialState); // movement lives in the engine
   const [outgoing, setOutgoing] = useState<Pos | null>(null); // the room being left
   const [active, setActive] = useState(false); // crossfade engaged (incoming→1, outgoing→0)
+  const [showCamera, setShowCamera] = useState(false); // the thumbs-up unlock panel
   const movingRef = useRef(false);
 
   // Re-skin the whole scene per room by writing the palette onto :root. The CSS
@@ -104,6 +118,8 @@ export default function LighthouseGame() {
       if (next.x === game.x && next.y === game.y) {
         // Blocked or locked: no move, just surface the message (no dissolve).
         setGame(next);
+        // The barred gallery hatch opens the webcam panel to try a thumbs-up.
+        if (next.message === GALLERY_BARRED_MESSAGE) setShowCamera(true);
         return;
       }
       // A real move: the old room becomes the outgoing dissolve layer.
@@ -114,6 +130,14 @@ export default function LighthouseGame() {
     };
 
     const onKey = (event: KeyboardEvent) => {
+      if (showCamera) {
+        // While the camera panel is open, Escape closes it; ignore movement.
+        if (event.key === "Escape") {
+          event.preventDefault();
+          setShowCamera(false);
+        }
+        return;
+      }
       const dir = keyToDirection[event.key];
       if (!dir) return;
       event.preventDefault(); // stop the arrow keys scrolling the page
@@ -122,7 +146,19 @@ export default function LighthouseGame() {
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [game]);
+  }, [game, showCamera]);
+
+  // Recognised a thumbs-up: record it, close the camera, and dissolve up into
+  // the gallery. (Mirrors the dissolve in the movement handler above.)
+  const onThumbUnlock = () => {
+    setShowCamera(false);
+    if (movingRef.current) return;
+    const next = move({ ...game, thumbUnlocked: true }, "up");
+    movingRef.current = true;
+    setActive(false);
+    setOutgoing({ x: game.x, y: game.y });
+    setGame(next);
+  };
 
   const here = `${game.x},${game.y}`;
   // While dissolving, the incoming layer sits under the outgoing one and starts
@@ -175,6 +211,14 @@ export default function LighthouseGame() {
           x={game.x}
           y={game.y}
           style={{ opacity: incomingOpacity }}
+          illustration={
+            showCamera ? (
+              <ThumbUnlock
+                onUnlock={onThumbUnlock}
+                onClose={() => setShowCamera(false)}
+              />
+            ) : undefined
+          }
         />
         {outgoing && (
           <Scene

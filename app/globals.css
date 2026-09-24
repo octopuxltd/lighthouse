@@ -161,3 +161,65 @@ h2 {
   font-family: system-ui, sans-serif;
   font-size: 0.85rem;
 }
+
+/* Webcam unlock — the thumbs-up door. Lives inside .illustration, taking the
+   place of the room's picture, so it inherits that box's frame. */
+.camera {
+  position: relative;
+}
+
+.camera-video {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 190px;
+  border-radius: 8px;
+  background: #000;
+  object-fit: cover;
+  transform: scaleX(-1); /* mirror, so it reads like a looking-glass */
+}
+
+.camera-status {
+  margin: 0;
+  min-height: 190px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: var(--accent);
+  font-style: italic;
+}
+
+.camera-caption {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  transform: translateX(-50%);
+  padding: 0.15rem 0.7rem;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  border-radius: 999px;
+  font-family: system-ui, sans-serif;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.camera-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.camera-close:hover {
+  background: rgba(0, 0, 0, 0.75);
+}

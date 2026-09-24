@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     // Cloudflare / OpenNext build output — generated, not ours to lint.
     ".open-next/**",
     ".wrangler/**",
+    // Vendored MediaPipe model/WASM assets — third-party, not ours to lint.
+    "public/mediapipe/**",
   ]),
 ]);
 
