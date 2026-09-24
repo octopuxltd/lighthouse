@@ -1,0 +1,35 @@
+name: Deploy to Cloudflare Workers
+
+# Deploy on every push to main.
+on:
+  push:
+    branches: [main]
+
+# Allow one deploy at a time; a newer push cancels an in-flight run.
+concurrency:
+  group: deploy-workers
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # Install exactly what package-lock.json pins (gives us the tsc compiler).
+      - run: npm ci
+
+      # Compile TypeScript, then assemble ./dist (index.html + js/game.js).
+      - run: npm run build:site
+
+      # Upload ./dist to Cloudflare as an assets-only Worker.
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

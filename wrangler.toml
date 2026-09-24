@@ -1,0 +1,9 @@
+# Cloudflare Workers config. This is an assets-only Worker (no server code):
+# wrangler uploads everything in ./dist and serves it as a static site on
+# lighthouse.<your-subdomain>.workers.dev. The ./dist folder is produced by
+# `npm run build:site` (compile TS, then copy index.html + js into dist).
+name = "lighthouse"
+compatibility_date = "2026-09-24"
+
+[assets]
+directory = "./dist"
