@@ -19,6 +19,20 @@ interface Pos {
   y: number;
 }
 
+// Mini-map bounds, derived from the actual rooms so the grid follows the map
+// however it grows (no longer a hardcoded 2×2). Empty cells fill the gaps.
+const COORDS = Object.keys(rooms).map(
+  (k) => k.split(",").map(Number) as [number, number],
+);
+const MIN_X = Math.min(...COORDS.map(([x]) => x));
+const MAX_X = Math.max(...COORDS.map(([x]) => x));
+const MIN_Y = Math.min(...COORDS.map(([, y]) => y));
+const MAX_Y = Math.max(...COORDS.map(([, y]) => y));
+const MAP_COLS = MAX_X - MIN_X + 1;
+
+const range = (from: number, to: number): number[] =>
+  Array.from({ length: to - from + 1 }, (_, i) => from + i);
+
 // One room's contents. Both the outgoing and incoming rooms render as a Scene,
 // stacked in the same grid cell so they can cross-dissolve.
 function Scene({ x, y, style }: Pos & { style: React.CSSProperties }) {
@@ -118,14 +132,28 @@ export default function LighthouseGame() {
   return (
     <main>
       <div className="topbar">
-        {/* 2×2 mini-map, laid out row by row (y) so cells sit in the rooms'
-            real positions. The active cell is filled with the room's accent. */}
-        <div className="map" aria-label="Map of the lighthouse">
-          {[0, 1].map((my) =>
-            [0, 1].map((mx) => {
-              const key = `${mx},${my}`;
+        {/* Mini-map laid out row by row (y) so cells sit in the rooms' real
+            positions. Gaps in the grid render as empty cells; the active cell
+            is filled with the room's accent. */}
+        <div
+          className="map"
+          style={{ gridTemplateColumns: `repeat(${MAP_COLS}, 1fr)` }}
+          aria-label="Map of the lighthouse"
+        >
+          {range(MIN_Y, MAX_Y).map((cy) =>
+            range(MIN_X, MAX_X).map((cx) => {
+              const key = `${cx},${cy}`;
               const r = rooms[key];
-              // Drop a leading "The " so the labels stay distinct (S, L, K, R).
+              if (!r) {
+                return (
+                  <div
+                    key={key}
+                    className="map-cell map-cell--empty"
+                    aria-hidden="true"
+                  />
+                );
+              }
+              // Drop a leading "The " so labels stay distinct (S, L, K, R, G).
               const letter = r.name.replace(/^the\s+/i, "")[0].toUpperCase();
               return (
                 <div

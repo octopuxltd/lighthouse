@@ -76,6 +76,12 @@ main {
   color: #10161b; /* dark ink reads on every room's (light) accent */
 }
 
+/* A gap in the grid (a position with no room): keep the slot, show nothing. */
+.map-cell--empty {
+  border-color: transparent;
+  background: transparent;
+}
+
 /* Stack the outgoing and incoming rooms in one grid cell so they can
    cross-dissolve: both occupy the same area and fade opposite ways. The cell
    sizes to the taller of the two during a move. */
