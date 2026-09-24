@@ -123,4 +123,34 @@ export const art: Record<string, string> = {
       `<path d="M103 34 L70 26" stroke="${GLOW}"/>`,
     2,
   ),
+
+  // The gallery (top, 1,-1): the railed walkway around the lantern, the beam
+  // sweeping over a starry night.
+  "1,-1": sketch(
+    "A sketch of the open gallery around the lantern under a starry sky",
+    // railing: two rails + balusters
+    `<line x1="18" y1="118" x2="202" y2="118"/>` +
+      `<line x1="18" y1="132" x2="202" y2="132"/>` +
+      `<line x1="34" y1="118" x2="34" y2="132"/>` +
+      `<line x1="58" y1="118" x2="58" y2="132"/>` +
+      `<line x1="82" y1="118" x2="82" y2="132"/>` +
+      `<line x1="106" y1="118" x2="106" y2="132"/>` +
+      `<line x1="130" y1="118" x2="130" y2="132"/>` +
+      // lantern housing at the right, with roof + finial
+      `<path d="M150 118 L150 66 L192 66 L192 118"/>` +
+      `<path d="M148 66 L171 50 L194 66"/>` +
+      `<line x1="171" y1="50" x2="171" y2="42"/>` +
+      `<line x1="150" y1="82" x2="192" y2="82"/>` +
+      // the lit lamp and its beam sweeping out over the sea
+      `<circle cx="171" cy="78" r="5" stroke="${GLOW}"/>` +
+      `<path d="M150 76 L54 56" stroke="${GLOW}"/>` +
+      `<path d="M150 92 L50 104" stroke="${GLOW}"/>` +
+      // stars
+      `<path d="M40 40 l0 6 M37 43 l6 0" stroke="${FAINT}"/>` +
+      `<path d="M70 28 l0 6 M67 31 l6 0" stroke="${FAINT}"/>` +
+      `<path d="M104 46 l0 6 M101 49 l6 0" stroke="${FAINT}"/>` +
+      `<path d="M126 30 l0 5 M123 32 l6 0" stroke="${FAINT}"/>` +
+      `<path d="M60 72 l0 5 M57 74 l6 0" stroke="${FAINT}"/>`,
+    5,
+  ),
 };

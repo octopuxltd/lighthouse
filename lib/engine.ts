@@ -11,16 +11,22 @@ export const LAMP_ROOM = "1,0";
 export const KEEPERS_KITCHEN = "0,1";
 export const LAMP_LOCKED_MESSAGE = "The lamp room door is locked.";
 
+// Above the lamp room, the gallery hatch stays barred until a thumbs-up is seen
+// via the webcam (the UI sets `thumbUnlocked`).
+export const GALLERY = "1,-1";
+export const GALLERY_BARRED_MESSAGE = "The hatch above is barred.";
+
 export interface GameState {
   x: number;
   y: number;
   visited: string[]; // room keys ("x,y") the player has entered
   message: string;
+  thumbUnlocked: boolean; // set once a thumbs-up has been recognised
 }
 
 export function initialState(): GameState {
   // Start on the rocks (1,1); count it as visited.
-  return { x: 1, y: 1, visited: ["1,1"], message: "" };
+  return { x: 1, y: 1, visited: ["1,1"], message: "", thumbUnlocked: false };
 }
 
 export function move(state: GameState, dir: Direction): GameState {
@@ -43,8 +49,19 @@ export function move(state: GameState, dir: Direction): GameState {
     return { ...state, message: LAMP_LOCKED_MESSAGE };
   }
 
+  // The gallery hatch is barred until a thumbs-up unlocks it.
+  if (key === GALLERY && !state.thumbUnlocked) {
+    return { ...state, message: GALLERY_BARRED_MESSAGE };
+  }
+
   const visited = state.visited.includes(key)
     ? state.visited
     : [...state.visited, key];
-  return { x: state.x + dx, y: state.y + dy, visited, message: "" };
+  return {
+    x: state.x + dx,
+    y: state.y + dy,
+    visited,
+    message: "",
+    thumbUnlocked: state.thumbUnlocked, // carry the flag across moves
+  };
 }

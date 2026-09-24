@@ -30,10 +30,20 @@ export const rooms: Record<string, Room> = {
   "1,0": {
     name: "Lamp room",
     description:
-      "Glass panes wrap the lamp room on every side and the great lens sits dark and patient at its centre. Far below, the sea works endlessly against the rocks.",
+      "Glass panes wrap the lamp room on every side and the great lens sits dark and patient at its centre. A steep hatch in the roof leads up to the gallery, and far below the sea works endlessly against the rocks.",
     blocked: {
-      up: "There is only the domed roof and the weather vane above; no way up from here.",
+      // up now leads to the gallery (gated by the thumbs-up, in the engine).
       right: "The panes give straight onto a hundred-foot drop to the water. Best not.",
+    },
+  },
+  "1,-1": {
+    name: "The gallery",
+    description:
+      "You step onto the narrow gallery that circles the lantern, the wind snatching at your coat. The beam sweeps over a black sea and a sky thick with stars.",
+    blocked: {
+      up: "Above is only the weather vane and the open night.",
+      left: "The railing is all that stands between you and the long fall; there is no way round.",
+      right: "The gallery ends at the railing on this side.",
     },
   },
   "0,1": {
@@ -137,5 +147,14 @@ export const palettes: Record<string, Palette> = {
     edge: "#244653",
     accent: "#8fd0d6",
     ink: "#e6eef0",
+  },
+  // The gallery: open night at the top of the tower — indigo sky, starlight.
+  "1,-1": {
+    bgTop: "#2a2f52",
+    bgBase: "#0a0c1a",
+    panel: "#16182e",
+    edge: "#3a3f66",
+    accent: "#b9c4ff",
+    ink: "#e8ecff",
   },
 };
