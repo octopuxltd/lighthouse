@@ -5,6 +5,12 @@ import { rooms, deltas, type Direction } from "./rooms";
 
 export const SEA_MESSAGE = "That way is only sea and sky. You can’t go there.";
 
+// The lamp room door stays locked until the player has visited the keeper's
+// kitchen (where, notionally, the key is found).
+export const LAMP_ROOM = "1,0";
+export const KEEPERS_KITCHEN = "0,1";
+export const LAMP_LOCKED_MESSAGE = "The lamp room door is locked.";
+
 export interface GameState {
   x: number;
   y: number;
@@ -30,6 +36,11 @@ export function move(state: GameState, dir: Direction): GameState {
   const key = `${state.x + dx},${state.y + dy}`;
   if (!rooms[key]) {
     return { ...state, message: SEA_MESSAGE };
+  }
+
+  // The lamp room, from any approach, is locked until the kitchen is visited.
+  if (key === LAMP_ROOM && !state.visited.includes(KEEPERS_KITCHEN)) {
+    return { ...state, message: LAMP_LOCKED_MESSAGE };
   }
 
   const visited = state.visited.includes(key)
