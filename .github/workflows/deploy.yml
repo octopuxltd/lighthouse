@@ -1,28 +1,61 @@
-name: Deploy to Cloudflare Workers
+name: CI and deploy
 
-# Deploy on every push to main.
+# On every push to main: run tests, lint and type check as independent jobs,
+# and deploy to Cloudflare only if all three pass.
 on:
   push:
     branches: [main]
 
-# Allow one deploy at a time; a newer push cancels an in-flight run.
+# One deploy at a time; a newer push cancels an in-flight run.
 concurrency:
   group: deploy-workers
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
 
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+
+  deploy:
+    # Only deploy if tests, lint and the type check all pass.
+    needs: [test, lint, typecheck]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           # Wrangler 4 requires Node >= 22.
           node-version: 22
           cache: npm
-
-      # Install exactly what package-lock.json pins.
       - run: npm ci
 
       # Build the Next app, adapt it for Workers with OpenNext, and deploy.

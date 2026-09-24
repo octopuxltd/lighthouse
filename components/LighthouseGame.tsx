@@ -3,14 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import {
   rooms,
-  deltas,
-  keyToDirection,
   arrowFor,
   palettes,
   availableDirections,
-  type Direction,
+  keyToDirection,
 } from "@/lib/rooms";
 import { art } from "@/lib/art";
+import { initialState, move, type GameState } from "@/lib/engine";
 
 // Matches the .scene opacity transition in globals.css; keep them in step.
 const DISSOLVE_MS = 260;
@@ -48,16 +47,15 @@ function Scene({ x, y, style }: Pos & { style: React.CSSProperties }) {
 }
 
 export default function LighthouseGame() {
-  const [pos, setPos] = useState<Pos>({ x: 1, y: 1 }); // current room; start on the rocks
+  const [game, setGame] = useState<GameState>(initialState); // movement lives in the engine
   const [outgoing, setOutgoing] = useState<Pos | null>(null); // the room being left
   const [active, setActive] = useState(false); // crossfade engaged (incoming→1, outgoing→0)
-  const [message, setMessage] = useState("");
   const movingRef = useRef(false);
 
   // Re-skin the whole scene per room by writing the palette onto :root. The CSS
   // transitions on body/main cross-shift the colour as the scenes dissolve.
   useEffect(() => {
-    const p = palettes[`${pos.x},${pos.y}`];
+    const p = palettes[`${game.x},${game.y}`];
     const s = document.documentElement.style;
     s.setProperty("--bg-top", p.bgTop);
     s.setProperty("--bg-base", p.bgBase);
@@ -65,7 +63,7 @@ export default function LighthouseGame() {
     s.setProperty("--edge", p.edge);
     s.setProperty("--accent", p.accent);
     s.setProperty("--ink", p.ink);
-  }, [pos]);
+  }, [game.x, game.y]);
 
   // Whenever an outgoing scene appears, run the dissolve: on the next frame flip
   // `active` so both layers transition (old→0, new→1), then drop the old layer.
@@ -83,46 +81,36 @@ export default function LighthouseGame() {
     };
   }, [outgoing]);
 
-  // Arrow-key movement. Rebound when the position changes so the handler always
-  // sees the current room.
+  // Arrow-key movement, delegated to the engine. Rebound when the state changes
+  // so the handler always sees the current room and visited set.
   useEffect(() => {
-    const move = (dir: Direction) => {
-      const room = rooms[`${pos.x},${pos.y}`];
-      const reason = room.blocked[dir];
-      if (reason) {
-        // A blocked bump is not a move, so don't dissolve — just show why.
-        setMessage(reason);
-        return;
-      }
-      const [dx, dy] = deltas[dir];
-      const target = rooms[`${pos.x + dx},${pos.y + dy}`];
-      if (!target) {
-        setMessage("That way is only sea and sky. You can’t go there.");
-        return;
-      }
+    const handle = (dir: Parameters<typeof move>[1]) => {
       if (movingRef.current) return; // ignore keys mid-dissolve
+      const next = move(game, dir);
+      if (next.x === game.x && next.y === game.y) {
+        // Blocked or locked: no move, just surface the message (no dissolve).
+        setGame(next);
+        return;
+      }
+      // A real move: the old room becomes the outgoing dissolve layer.
       movingRef.current = true;
-
-      // Old room becomes the outgoing layer; new room becomes current. The
-      // dissolve effect above then cross-fades them.
-      setMessage("");
       setActive(false);
-      setOutgoing(pos);
-      setPos({ x: pos.x + dx, y: pos.y + dy });
+      setOutgoing({ x: game.x, y: game.y });
+      setGame(next);
     };
 
     const onKey = (event: KeyboardEvent) => {
       const dir = keyToDirection[event.key];
       if (!dir) return;
       event.preventDefault(); // stop the arrow keys scrolling the page
-      move(dir);
+      handle(dir);
     };
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [pos]);
+  }, [game]);
 
-  const here = `${pos.x},${pos.y}`;
+  const here = `${game.x},${game.y}`;
   // While dissolving, the incoming layer sits under the outgoing one and starts
   // hidden; the rAF flip fades it up as the outgoing fades down.
   const incomingOpacity = outgoing && !active ? 0 : 1;
@@ -156,8 +144,8 @@ export default function LighthouseGame() {
       <div className="room-view">
         <Scene
           key="current"
-          x={pos.x}
-          y={pos.y}
+          x={game.x}
+          y={game.y}
           style={{ opacity: incomingOpacity }}
         />
         {outgoing && (
@@ -170,7 +158,7 @@ export default function LighthouseGame() {
         )}
       </div>
 
-      <p className="message">{message}</p>
+      <p className="message">{game.message}</p>
 
       <p className="hint">Use the arrow keys.</p>
     </main>

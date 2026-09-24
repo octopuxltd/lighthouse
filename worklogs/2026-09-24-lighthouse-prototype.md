@@ -16,7 +16,8 @@ Arrow keys move between rooms. Each room shows its name, a hand-drawn SVG illust
 ## Ground truth
 
 - **Next.js 16 (App Router, React 19, TypeScript, plain CSS)**, deployed to Cloudflare Workers via the **OpenNext adapter** (`@opennextjs/cloudflare`).
-- Game code: `components/LighthouseGame.tsx` (client component with all state + input), data in `lib/rooms.ts` (rooms, deltas, palettes, `availableDirections`), art in `lib/art.ts` (the SVG builders). Styles in `app/globals.css` (ported verbatim from the prototype). Page shell: `app/page.tsx` + `app/layout.tsx`.
+- Game code: `components/LighthouseGame.tsx` (client component — dissolve/render/input only; delegates movement to the engine). Movement rules in `lib/engine.ts` (pure, browser-free: `initialState()` + `move(state, dir)` returning `{x, y, visited, message}`). Data in `lib/rooms.ts` (rooms, deltas, palettes, `availableDirections`), art in `lib/art.ts`. Styles in `app/globals.css` (ported verbatim). Page shell: `app/page.tsx` + `app/layout.tsx`.
+- Tests: `lib/engine.test.ts` via **vitest** (`npm test`). The engine is the single movement source of truth so rules are testable without a browser.
 - Local dev: `cd /Users/paul.annett/lighthouse && npm run dev -- -p 8767` → http://127.0.0.1:8767. Port 8767 is reserved (not auto-served) in `/Users/paul.annett/schemes/PORTS.md`; `.claude/launch.json` runs `npm run dev`.
 - **Live at https://lighthouse.cloudflare-ktncw.workers.dev** — auto-deployed on every push to `main`. URL unchanged across the migration because the Worker name stayed `lighthouse`.
 - Repo: https://github.com/octopuxltd/lighthouse (public, account octopuxltd, commits use the GitHub noreply email).
