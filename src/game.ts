@@ -37,9 +37,9 @@ const rooms: Record<string, Room> = {
     },
   },
   "0,1": {
-    name: "Keeper's kitchen",
+    name: "Keeper’s kitchen",
     description:
-      "A cold cast-iron stove and a single chair furnish the keeper's kitchen, and a mug of tea has long gone to scum on the table. A narrow doorway opens onto the foot of the stair.",
+      "A cold cast-iron stove and a single chair furnish the keeper’s kitchen, and a mug of tea has long gone to scum on the table. A narrow doorway opens onto the foot of the stair.",
     blocked: {
       down: "The flagstone floor is solid; the cellar was bricked up years ago.",
       left: "The seaward wall is blank stone, thick enough to break the winter gales.",
@@ -156,7 +156,7 @@ const art: Record<string, string> = {
   // Keeper's kitchen (bottom left): stove with a pot, a steaming mug on a table,
   // a plain chair.
   "0,1": sketch(
-    "A sketch of the keeper's kitchen with a stove, a mug and a chair",
+    "A sketch of the keeper’s kitchen with a stove, a mug and a chair",
     `<line x1="20" y1="126" x2="200" y2="126"/>` +
       // stove
       `<path d="M34 74 L34 126 L86 126 L86 74 Z"/>` +
@@ -356,7 +356,7 @@ function move(dir: Direction): void {
   const target = rooms[`${x + dx},${y + dy}`];
   if (!target) {
     // No mapped room and no bespoke reason: a plain edge of the world.
-    render("That way is only sea and sky. You can't go there.");
+    render("That way is only sea and sky. You can’t go there.");
     return;
   }
   if (moving) return; // ignore keys mid-fade so transitions don't stack
