@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>The lighthouse</title>
+    <style>
+      :root {
+        /* Defaults; the script overrides these per room for colour and mood. */
+        --ink: #eef2f6;
+        --dim: #93a4b3;
+        --bg-top: #16323f;
+        --bg-base: #0b1a24;
+        --panel: #12252f;
+        --edge: #274150;
+        --accent: #ffd27d;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 2rem 1.25rem;
+        background:
+          radial-gradient(120% 90% at 50% -10%, var(--bg-top) 0%, var(--bg-base) 60%);
+        color: var(--ink);
+        font-family: Georgia, "Times New Roman", serif;
+        line-height: 1.6;
+        transition: background 600ms ease, color 600ms ease;
+      }
+
+      main {
+        width: min(38rem, 100%);
+        background: var(--panel);
+        border: 1px solid var(--edge);
+        border-radius: 14px;
+        padding: 1.75rem 1.75rem 2rem;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+        transition: background 600ms ease, border-color 600ms ease;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 1.25rem;
+      }
+
+      /* 2×2 mini-map, laid out to match the rooms' real positions. The current
+         room is filled with the room's accent, so the marker also carries mood. */
+      .map {
+        display: inline-grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 4px;
+        padding: 5px;
+        border: 1px solid var(--edge);
+        border-radius: 8px;
+        transition: border-color 600ms ease;
+      }
+
+      .map-cell {
+        width: 22px;
+        height: 22px;
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--edge);
+        border-radius: 4px;
+        font-family: system-ui, sans-serif;
+        font-size: 0.7rem;
+        color: var(--dim);
+        transition: background 400ms ease, color 400ms ease,
+          border-color 400ms ease;
+      }
+
+      .map-cell.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #10161b; /* dark ink reads on every room's (light) accent */
+      }
+
+      /* The room content cross-fades on a real move; blocked bumps don't. */
+      .room-view {
+        transition: opacity 220ms ease;
+      }
+
+      .room-name {
+        margin: 0 0 1rem;
+        font-size: 1.65rem;
+        letter-spacing: 0.01em;
+        color: var(--accent);
+      }
+
+      .illustration {
+        margin: 0 0 1.5rem;
+        padding: 0.75rem;
+        background: rgba(0, 0, 0, 0.18);
+        border: 1px solid var(--edge);
+        border-radius: 10px;
+      }
+
+      .illustration svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        max-height: 190px;
+      }
+
+      .description {
+        margin: 0 0 1.5rem;
+        font-size: 1.1rem;
+      }
+
+      h2 {
+        margin: 0 0 0.5rem;
+        font-size: 0.8rem;
+        font-weight: normal;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: var(--dim);
+      }
+
+      .exits {
+        list-style: none;
+        margin: 0 0 1.5rem;
+        padding: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .exits li {
+        padding: 0.35rem 0.75rem;
+        border: 1px solid var(--edge);
+        border-radius: 999px;
+        font-family: system-ui, sans-serif;
+        font-size: 0.95rem;
+      }
+
+      .message {
+        min-height: 1.6em;
+        color: var(--accent);
+        font-style: italic;
+      }
+
+      .hint {
+        margin: 1.5rem 0 0;
+        padding-top: 1rem;
+        border-top: 1px solid var(--edge);
+        color: var(--dim);
+        font-family: system-ui, sans-serif;
+        font-size: 0.85rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="topbar">
+        <div class="map" id="map" aria-label="Map of the lighthouse"></div>
+      </div>
+
+      <div class="room-view" id="room-view">
+        <h1 class="room-name" id="room-name"></h1>
+        <div class="illustration" id="illustration"></div>
+        <p class="description" id="description"></p>
+
+        <h2>You can go</h2>
+        <ul class="exits" id="exits"></ul>
+      </div>
+
+      <p class="message" id="message"></p>
+
+      <p class="hint">Use the arrow keys to move.</p>
+    </main>
+
+    <script src="js/game.js"></script>
+  </body>
+</html>
