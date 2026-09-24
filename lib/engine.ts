@@ -1,7 +1,9 @@
-// Pure room-movement rules — no browser, no DOM, no React. Given a GameState and
-// a direction, `move` returns the next GameState (position, rooms visited, and a
-// message). The UI layer renders this; tests drive it directly.
-import { rooms, deltas, type Direction } from "./rooms";
+// Pure room-movement rules — no browser, no DOM, no React. Given a GameState, a
+// direction and the set of rooms, `move` returns the next GameState (position,
+// rooms visited, and a message). Exits come from adjacency in `world`, so the
+// same rules work whether the rooms are the static default or loaded from D1.
+// The UI layer renders this; tests drive it directly.
+import { rooms, deltas, type Direction, type World } from "./rooms";
 
 export const SEA_MESSAGE = "That way is only sea and sky. You can’t go there.";
 
@@ -29,18 +31,15 @@ export function initialState(): GameState {
   return { x: 1, y: 1, visited: ["1,1"], message: "", thumbUnlocked: false };
 }
 
-export function move(state: GameState, dir: Direction): GameState {
-  const room = rooms[`${state.x},${state.y}`];
-
-  const reason = room.blocked[dir];
-  if (reason) {
-    // A wall with a bespoke reason: stay put, explain why.
-    return { ...state, message: reason };
-  }
-
+export function move(
+  state: GameState,
+  dir: Direction,
+  world: World = rooms,
+): GameState {
   const [dx, dy] = deltas[dir];
   const key = `${state.x + dx},${state.y + dy}`;
-  if (!rooms[key]) {
+  if (!world[key]) {
+    // No room that way — a wall or the open sea.
     return { ...state, message: SEA_MESSAGE };
   }
 

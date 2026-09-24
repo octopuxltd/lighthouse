@@ -18,5 +18,13 @@
   ],
   "images": {
     "binding": "IMAGES"
-  }
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "lighthouse-db",
+      "database_id": "db3e07b1-0966-4f5d-8c0b-209f4254ebd2"
+    }
+  ],
+  "migrations_dir": "migrations"
 }

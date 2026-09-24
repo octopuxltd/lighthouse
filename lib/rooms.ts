@@ -1,9 +1,11 @@
-// The lighthouse: four rooms on a 2×2 grid, addressed by "x,y" with y growing
-// downward:
+// The lighthouse, addressed by "x,y" with y growing downward:
+//   (1,-1) The gallery
 //   (0,0) Spiral stair     (1,0) Lamp room
 //   (0,1) Keeper's kitchen  (1,1) The rocks  ← player starts here
-// A move off the grid is "blocked" and carries a reason worded for that specific
-// room and direction, rather than a generic one.
+// A room is just a name, a description and its grid position. Exits are worked
+// out from which rooms sit next to each other (see availableDirections and the
+// engine), so adding a room adds its doors. At runtime the rooms come from the
+// D1 database; the map below is the static default the engine and tests use.
 
 export type Direction = "up" | "down" | "left" | "right";
 
@@ -11,58 +13,37 @@ export interface Room {
   name: string;
   // Two sentences describing what the player can see.
   description: string;
-  // Reasons a given direction can't be taken from this room. A direction that
-  // leads to another room is absent here; a direction present here is blocked.
-  blocked: Partial<Record<Direction, string>>;
 }
 
-// Keyed by "x,y".
-export const rooms: Record<string, Room> = {
+// A set of rooms keyed by "x,y" — the shape both the static default and the
+// D1-loaded rooms take.
+export type World = Record<string, Room>;
+
+export const rooms: World = {
   "0,0": {
     name: "Spiral stair",
     description:
       "The iron spiral stair coils up through the heart of the tower, its treads worn shallow by decades of boots. Cold air falls from the lamp room above and the kitchen lies a few steps down.",
-    blocked: {
-      up: "The stair simply ends at a bolted hatch; the lamp room is reached from the side, not straight up.",
-      left: "Only the curved outer wall of the tower is there, streaked with rust.",
-    },
   },
   "1,0": {
     name: "Lamp room",
     description:
       "Glass panes wrap the lamp room on every side and the great lens sits dark and patient at its centre. A steep hatch in the roof leads up to the gallery, and far below the sea works endlessly against the rocks.",
-    blocked: {
-      // up now leads to the gallery (gated by the thumbs-up, in the engine).
-      right: "The panes give straight onto a hundred-foot drop to the water. Best not.",
-    },
   },
   "1,-1": {
     name: "The gallery",
     description:
       "You step onto the narrow gallery that circles the lantern, the wind snatching at your coat. The beam sweeps over a black sea and a sky thick with stars.",
-    blocked: {
-      up: "Above is only the weather vane and the open night.",
-      left: "The railing is all that stands between you and the long fall; there is no way round.",
-      right: "The gallery ends at the railing on this side.",
-    },
   },
   "0,1": {
     name: "Keeper’s kitchen",
     description:
       "A cold cast-iron stove and a single chair furnish the keeper’s kitchen, and a mug of tea has long gone to scum on the table. A narrow doorway opens onto the foot of the stair.",
-    blocked: {
-      down: "The flagstone floor is solid; the cellar was bricked up years ago.",
-      left: "The seaward wall is blank stone, thick enough to break the winter gales.",
-    },
   },
   "1,1": {
     name: "The rocks",
     description:
       "You stand on the black, weed-slick rocks at the foot of the lighthouse as spray bursts around your knees. The tower door hangs open to the north and a low path skirts the base to the west.",
-    blocked: {
-      down: "There is nothing south but the open sea, grey and heaving.",
-      right: "The rocks fall away into deep water on that side.",
-    },
   },
 };
 
@@ -88,12 +69,15 @@ export const arrowFor: Record<Direction, string> = {
   right: "→",
 };
 
-export function availableDirections(x: number, y: number): Direction[] {
-  const room = rooms[`${x},${y}`];
+// A direction is an exit when a room sits in the neighbouring cell.
+export function availableDirections(
+  x: number,
+  y: number,
+  world: World = rooms,
+): Direction[] {
   return (Object.keys(deltas) as Direction[]).filter((dir) => {
-    if (room.blocked[dir]) return false;
     const [dx, dy] = deltas[dir];
-    return Boolean(rooms[`${x + dx},${y + dy}`]);
+    return Boolean(world[`${x + dx},${y + dy}`]);
   });
 }
 

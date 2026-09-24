@@ -7,6 +7,7 @@ import {
   palettes,
   availableDirections,
   keyToDirection,
+  type World,
 } from "@/lib/rooms";
 import { art } from "@/lib/art";
 import {
@@ -25,17 +26,6 @@ interface Pos {
   y: number;
 }
 
-// Mini-map bounds, derived from the actual rooms so the grid follows the map
-// however it grows (no longer a hardcoded 2×2). Empty cells fill the gaps.
-const COORDS = Object.keys(rooms).map(
-  (k) => k.split(",").map(Number) as [number, number],
-);
-const MIN_X = Math.min(...COORDS.map(([x]) => x));
-const MAX_X = Math.max(...COORDS.map(([x]) => x));
-const MIN_Y = Math.min(...COORDS.map(([, y]) => y));
-const MAX_Y = Math.max(...COORDS.map(([, y]) => y));
-const MAP_COLS = MAX_X - MIN_X + 1;
-
 const range = (from: number, to: number): number[] =>
   Array.from({ length: to - from + 1 }, (_, i) => from + i);
 
@@ -45,18 +35,24 @@ const range = (from: number, to: number): number[] =>
 function Scene({
   x,
   y,
+  world,
   style,
   illustration,
-}: Pos & { style: React.CSSProperties; illustration?: React.ReactNode }) {
+}: Pos & {
+  world: World;
+  style: React.CSSProperties;
+  illustration?: React.ReactNode;
+}) {
   const key = `${x},${y}`;
-  const room = rooms[key];
-  const dirs = availableDirections(x, y);
+  const room = world[key];
+  const dirs = availableDirections(x, y, world);
+  if (!room) return <div className="scene" style={style} />;
   return (
     <div className="scene" style={style}>
       <h1 className="room-name">{room.name}</h1>
       <div className="illustration">
         {illustration ?? (
-          <div dangerouslySetInnerHTML={{ __html: art[key] }} />
+          <div dangerouslySetInnerHTML={{ __html: art[key] ?? "" }} />
         )}
       </div>
       <p className="description">{room.description}</p>
@@ -74,16 +70,35 @@ function Scene({
 }
 
 export default function LighthouseGame() {
+  const [world, setWorld] = useState<World | null>(null); // rooms loaded from D1
   const [game, setGame] = useState<GameState>(initialState); // movement lives in the engine
   const [outgoing, setOutgoing] = useState<Pos | null>(null); // the room being left
   const [active, setActive] = useState(false); // crossfade engaged (incoming→1, outgoing→0)
   const [showCamera, setShowCamera] = useState(false); // the thumbs-up unlock panel
   const movingRef = useRef(false);
 
+  // Load the rooms from the D1-backed route handler once, on mount. Fall back
+  // to the static default if the request fails so the game still runs.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/rooms")
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled) setWorld((data.rooms as World) ?? rooms);
+      })
+      .catch(() => {
+        if (!cancelled) setWorld(rooms);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Re-skin the whole scene per room by writing the palette onto :root. The CSS
   // transitions on body/main cross-shift the colour as the scenes dissolve.
   useEffect(() => {
     const p = palettes[`${game.x},${game.y}`];
+    if (!p) return;
     const s = document.documentElement.style;
     s.setProperty("--bg-top", p.bgTop);
     s.setProperty("--bg-base", p.bgBase);
@@ -109,12 +124,12 @@ export default function LighthouseGame() {
     };
   }, [outgoing]);
 
-  // Arrow-key movement, delegated to the engine. Rebound when the state changes
-  // so the handler always sees the current room and visited set.
+  // Arrow-key movement, delegated to the engine with the loaded world. Rebound
+  // when the state changes so the handler always sees the current room.
   useEffect(() => {
     const handle = (dir: Parameters<typeof move>[1]) => {
-      if (movingRef.current) return; // ignore keys mid-dissolve
-      const next = move(game, dir);
+      if (movingRef.current || !world) return; // ignore keys mid-dissolve / pre-load
+      const next = move(game, dir, world);
       if (next.x === game.x && next.y === game.y) {
         // Blocked or locked: no move, just surface the message (no dissolve).
         setGame(next);
@@ -146,40 +161,55 @@ export default function LighthouseGame() {
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [game, showCamera]);
+  }, [game, showCamera, world]);
 
   // Recognised a thumbs-up: record it, close the camera, and dissolve up into
   // the gallery. (Mirrors the dissolve in the movement handler above.)
   const onThumbUnlock = () => {
     setShowCamera(false);
-    if (movingRef.current) return;
-    const next = move({ ...game, thumbUnlocked: true }, "up");
+    if (movingRef.current || !world) return;
+    const next = move({ ...game, thumbUnlocked: true }, "up", world);
     movingRef.current = true;
     setActive(false);
     setOutgoing({ x: game.x, y: game.y });
     setGame(next);
   };
 
+  if (!world) {
+    return (
+      <main>
+        <p className="hint">Loading the lighthouse…</p>
+      </main>
+    );
+  }
+
   const here = `${game.x},${game.y}`;
   // While dissolving, the incoming layer sits under the outgoing one and starts
   // hidden; the rAF flip fades it up as the outgoing fades down.
   const incomingOpacity = outgoing && !active ? 0 : 1;
 
+  // Mini-map bounds, derived from the loaded rooms so the grid follows the map
+  // however it grows. Gaps render as empty cells.
+  const coords = Object.keys(world).map(
+    (k) => k.split(",").map(Number) as [number, number],
+  );
+  const minX = Math.min(...coords.map(([x]) => x));
+  const maxX = Math.max(...coords.map(([x]) => x));
+  const minY = Math.min(...coords.map(([, y]) => y));
+  const maxY = Math.max(...coords.map(([, y]) => y));
+
   return (
     <main>
       <div className="topbar">
-        {/* Mini-map laid out row by row (y) so cells sit in the rooms' real
-            positions. Gaps in the grid render as empty cells; the active cell
-            is filled with the room's accent. */}
         <div
           className="map"
-          style={{ gridTemplateColumns: `repeat(${MAP_COLS}, 1fr)` }}
+          style={{ gridTemplateColumns: `repeat(${maxX - minX + 1}, 1fr)` }}
           aria-label="Map of the lighthouse"
         >
-          {range(MIN_Y, MAX_Y).map((cy) =>
-            range(MIN_X, MAX_X).map((cx) => {
+          {range(minY, maxY).map((cy) =>
+            range(minX, maxX).map((cx) => {
               const key = `${cx},${cy}`;
-              const r = rooms[key];
+              const r = world[key];
               if (!r) {
                 return (
                   <div
@@ -210,6 +240,7 @@ export default function LighthouseGame() {
           key="current"
           x={game.x}
           y={game.y}
+          world={world}
           style={{ opacity: incomingOpacity }}
           illustration={
             showCamera ? (
@@ -225,6 +256,7 @@ export default function LighthouseGame() {
             key="outgoing"
             x={outgoing.x}
             y={outgoing.y}
+            world={world}
             style={{ opacity: active ? 0 : 1 }}
           />
         )}
