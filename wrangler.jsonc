@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Keep this name as "lighthouse" — it sets the live URL
+  // (lighthouse.cloudflare-ktncw.workers.dev). Changing it moves the site.
+  "name": "lighthouse",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-08-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "lighthouse"
+    }
+  ],
+  "images": {
+    "binding": "IMAGES"
+  }
+}

@@ -1,4 +1,6 @@
 {
+  "runtimeExecutable": "npm",
+  "runtimeArgs": ["run", "dev", "--", "-p", "8767"],
   "url": "http://127.0.0.1:8767",
   "port": 8767
 }
